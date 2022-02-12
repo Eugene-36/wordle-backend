@@ -3,11 +3,34 @@ const PORT = 8000;
 const axios = require('axios');
 const express = require('express');
 const cors = require('cors');
-
+const path = require('path');
 require('dotenv').config();
+
+const { createProxyMiddleware } = require('http-proxy-middleware');
 
 const app = express();
 app.use(cors());
+
+// add relevant request parsers
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.text());
+
+app.set('src', path.join(__dirname, '/src'));
+
+// set jade as view engine.
+app.set('view engine', 'jade');
+
+// public route will be used to server the static content
+app.use('/src', express.static('src'));
+
+app.use(
+  '/api',
+  createProxyMiddleware({
+    target: 'http://localhost:8000',
+    changeOrigin: true,
+  }),
+);
 
 app.get('/word', (req, res) => {
   const options = {
@@ -22,11 +45,11 @@ app.get('/word', (req, res) => {
 
   axios
     .request(options)
-    .then((response) => {
+    .then(response => {
       console.log(response.data);
       res.json(response.data[0]);
     })
-    .catch((error) => {
+    .catch(error => {
       console.error(error);
     });
 });
@@ -46,11 +69,11 @@ app.get('/check', (req, res) => {
 
   axios
     .request(options)
-    .then((response) => {
-      console.log(response.data);
+    .then(response => {
+      //console.log(response.data);
       res.json(response.data.result_msg);
     })
-    .catch((error) => {
+    .catch(error => {
       console.error(error);
     });
 });
@@ -71,14 +94,13 @@ app.get('/definition', (req, res) => {
 
   axios
     .request(options)
-    .then((response) => {
+    .then(response => {
+      //console.log('response.data.meaning', response);
       res.json(
-        response.data.meaning.noun ||
-          response.data.meaning.adjective ||
-          response.data.meaning.verb
+        response.data.meaning.noun || response.data.meaning.adjective || response.data.meaning.verb,
       );
     })
-    .catch((error) => {
+    .catch(error => {
       console.error(error);
     });
 });
